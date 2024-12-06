@@ -30,7 +30,7 @@ export default async function RootLayout({
   const session = (await cookies()).get(SESSION_COOKIE_NAME)?.value || null;
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning={true}>
       <body className={`${geistSans.variable} ${geistMono.variable} light`}>
         <NextUIProvider>
           <Header session={session}/>

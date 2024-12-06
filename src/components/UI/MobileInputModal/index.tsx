@@ -10,6 +10,7 @@ import {
   ModalFooter,
 } from "@nextui-org/react";
 import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
+import { firebaseAuth } from "@/libs/firebase/config";
 
 export default function MobileInputModal({
   onClose,
@@ -24,23 +25,31 @@ export default function MobileInputModal({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const auth:any = getAuth();
+  const [recaptchaVerifier, setRecaptchaVerifier] = useState<any>()
 
   useEffect(() => {
-    // Initialize the reCAPTCHA verifier
-    const recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
+    const recaptchaVerifier = new RecaptchaVerifier(firebaseAuth, "recaptcha-container", {
       size: "invisible",
     });
-    recaptchaVerifier.render();
-  }, []);
+    setRecaptchaVerifier(recaptchaVerifier)
+    return () => {
+      recaptchaVerifier.clear()
+    }
+  }, [firebaseAuth]);
 
   const handleOtpRequest = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
 
+
+    if(!recaptchaVerifier) {
+      setError("Recaptcha not verified")
+      return;
+    }
+
     try {
-      const confirmation = await signInWithPhoneNumber(auth, mobileNumber, auth.recaptchaVerifier);
+      const confirmation = await signInWithPhoneNumber(firebaseAuth, mobileNumber,recaptchaVerifier);
       setConfirmationResult(confirmation);
       setSuccess("OTP sent successfully!");
     } catch (err: any) {
@@ -64,8 +73,8 @@ export default function MobileInputModal({
     try {
       const result = await confirmationResult.confirm(otp);
       const user = result.user;
-
-      onMobileSubmit(user.phoneNumber); // Pass authenticated mobile number back to parent
+      console.log("object", user)
+      onMobileSubmit(user.phoneNumber);
       setSuccess("Mobile number verified successfully!");
       onClose();
     } catch (err: any) {

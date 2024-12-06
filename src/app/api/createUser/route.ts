@@ -13,6 +13,8 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { name, email, emailVerified, profilePicture } = body;
+    console.log("sdfasdfasd",name,
+email)
 
     if (!name || !email) {
       return NextResponse.json(
@@ -26,8 +28,8 @@ export async function POST(req: NextRequest) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: "User already exists" },
-        { status: 409 }
+        { error: "User already exists", user: existingUser },
+        { status: 409 },
       );
     }
     const user = await prisma.user.create({
@@ -39,7 +41,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json(user, { status: 201 });
+    return NextResponse.json({user:user}, { status: 201 });
   } catch (error) {
     console.error("Error during user creation:", error);
     return NextResponse.json(

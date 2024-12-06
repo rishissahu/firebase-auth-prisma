@@ -15,6 +15,7 @@ export default function GoogleAuthButton({
 }) {
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [firebaseId, setFirebaseId] = useState<string>("");
 
   const handleSignIn = async () => {
     const user = await signInWithGoogle();
@@ -32,9 +33,9 @@ export default function GoogleAuthButton({
       });
 
       const responseData = await res.json();
-
-      if (!responseData.mobileNumber) {
-        setUserId(user.uid);
+      if (!responseData.user.mobileNumber) {
+        setFirebaseId(user.uid)
+        setUserId(responseData.user.id);
         setShowMobileModal(true);
       } else {
         await createSession(user.uid);
@@ -45,19 +46,21 @@ export default function GoogleAuthButton({
 
   const handleMobileSubmit = async (mobileNumber: string) => {
     try {
-      const res = await fetch("/api/updateUserMobile", {
+      const res = await fetch("/api/updateUser", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, mobileNumber }),
       });
-
+  
       if (res.ok) {
-        setShowMobileModal(false);
-        await createSession(userId!);
-        if (onSuccess) onSuccess();
+        const data = await res.json();
+        console.log("User updated successfully:", data);
+      } else {
+        const errorData = await res.json();
+        console.error("Failed to update user:", errorData.error);
       }
     } catch (err) {
-      console.error("Failed to update mobile number:", err);
+      console.error("Error during update:", err);
     }
   };
 
@@ -73,7 +76,10 @@ export default function GoogleAuthButton({
       </Button>
       {showMobileModal && (
         <MobileInputModal
-          onClose={() => setShowMobileModal(false)}
+          onClose={() => {
+            setShowMobileModal(false)
+            createSession(firebaseId)
+          }}
           onMobileSubmit={handleMobileSubmit}
         />
       )}
