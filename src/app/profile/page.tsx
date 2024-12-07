@@ -5,12 +5,13 @@ import {
   useLoadScript,
   GoogleMap,
   MarkerF,
+  Libraries,
 } from "@react-google-maps/api";
 import usePlacesAutocomplete, {
   getGeocode,
   getLatLng,
 } from "use-places-autocomplete";
-
+const library: Libraries = ["core", "maps", "places", "marker"]
 const Profile: React.FC = () => {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [addressDetails, setAddressDetails] = useState({
@@ -21,7 +22,7 @@ const Profile: React.FC = () => {
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || "",
-    libraries: ["places"],
+    library
   });
 
   const {
