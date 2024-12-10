@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Input } from "@nextui-org/react";
 import {
   useLoadScript,
@@ -11,18 +11,29 @@ import usePlacesAutocomplete, {
   getGeocode,
   getLatLng,
 } from "use-places-autocomplete";
-const library: Libraries = ["core", "maps", "places", "marker"]
+import Script from "next/script";
+
+const libraries: Libraries = ["places"];
+
 const Profile: React.FC = () => {
-  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
+    null
+  );
   const [addressDetails, setAddressDetails] = useState({
     pincode: "",
     city: "",
     floor: "",
   });
 
+  useEffect(() => {
+    <Script
+      // defer
+      src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}&libraries=places`}
+    />;
+  }, []);
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY || "",
-    library
+    libraries,
   });
 
   const {
@@ -58,43 +69,66 @@ const Profile: React.FC = () => {
     }
   };
 
+  const onMarkerDragEnd = (e: google.maps.MapMouseEvent) => {
+    if (e.latLng) {
+      setLocation({
+        lat: e.latLng.lat(),
+        lng: e.latLng.lng(),
+      });
+    }
+  };
+
   if (!isLoaded) return <div>Loading Maps...</div>;
 
   return (
     <div style={{ padding: "20px" }}>
-      <Input
-        placeholder="Enter your place"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        disabled={!ready}
-      />
-      {status === "OK" &&
-        data.map(({ place_id, description }) => (
-          <div
-            key={place_id}
-            onClick={() => handleSelect(description)}
-            style={{ cursor: "pointer", margin: "5px 0" }}
-          >
-            {description}
-          </div>
-        ))}
-
-      <Button onClick={fetchLocation} style={{ marginTop: "10px" }}>
-        Get My Location
-      </Button>
+      <div className="flex gap-4 items-center">
+        <Button className="px-10" onClick={fetchLocation}>
+          Fetch my current Location
+        </Button>
+        <div className="relative w-full">
+          <Input
+            placeholder="Enter your place"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            disabled={!ready}
+          />
+          {status === "OK" && (
+            <div className="absolute top-10 z-10 bg-white p-3">
+              {data.map(({ place_id, description }, index) => (
+                <div
+                  className=""
+                  key={place_id}
+                  onClick={() => handleSelect(description)}
+                  style={{ cursor: "pointer", margin: "5px 0" }}
+                >
+                  {description}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       {location && (
         <GoogleMap
-          center={location}
+          center={location ?? ""}
           zoom={15}
-          mapContainerStyle={{ width: "100%", height: "400px", marginTop: "20px" }}
+          mapContainerStyle={{
+            width: "100%",
+            height: "400px",
+            marginTop: "20px",
+          }}
         >
-          <MarkerF position={location} />
+          <MarkerF position={location} draggable onDragEnd={onMarkerDragEnd} />
         </GoogleMap>
       )}
 
       {location && (
-        <div style={{ marginTop: "20px" }}>
+        <div
+          className="w-1/3 flex flex-col items-start gap-5"
+          style={{ marginTop: "20px" }}
+        >
           <Input
             placeholder="Pincode"
             value={addressDetails.pincode}
@@ -118,6 +152,7 @@ const Profile: React.FC = () => {
               setAddressDetails({ ...addressDetails, floor: e.target.value })
             }
           />
+          <Button>Save Adress</Button>
         </div>
       )}
     </div>
