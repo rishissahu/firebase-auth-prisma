@@ -5,6 +5,7 @@ import { NextUIProvider } from "@nextui-org/react";
 import Header from "@/components/UI/Header";
 import { cookies } from "next/headers";
 import { SESSION_COOKIE_NAME } from "@/constants";
+import Script from "next/script";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -31,11 +32,15 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning={true}>
+      <Script
+        id="razorpay-checkout-js"
+        src="https://checkout.razorpay.com/v1/checkout.js"
+      />
       <body className={`${geistSans.variable} ${geistMono.variable} light`}>
         <NextUIProvider>
-          <Header session={session}/>
+          <Header session={session} />
           {children}
-          </NextUIProvider>
+        </NextUIProvider>
       </body>
     </html>
   );
